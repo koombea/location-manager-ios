@@ -44,7 +44,7 @@ LocationManager.requestBackgroundLocation()
 
 ```swift
 NotificationCenter.default.addObserver(self, selector: #selector(yourSelector),
-                                               name: LocationManager.authorizationStatus, object: nil)
+                                               name: LocationManager.authorizationStatusChanged, object: nil)
 
 NotificationCenter.default.addObserver(self, selector: #selector(yourSelector),
                                                name: LocationManager.locationManagerDidFail, object: nil)
