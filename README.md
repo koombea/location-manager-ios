@@ -30,7 +30,7 @@ dependencies: [
 
 ```swift
 LocationManager.promptForLocationAuthorization { status in
-
+	//Your code here
 }	
 ```
 
