@@ -26,7 +26,7 @@ dependencies: [
 
 ## The Basics
 
-### Get Location Auhtorization
+### Location Authorization
 
 ```swift
 LocationManager.promptForLocationAuthorization { status in
@@ -34,7 +34,9 @@ LocationManager.promptForLocationAuthorization { status in
 }	
 ```
 
-### Background Location
+### Background Location Authorization
+
+it must be used before `promptForLocationAuthorization`
 
 ```swift
 LocationManager.requestBackgroundLocation()	
