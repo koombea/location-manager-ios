@@ -42,16 +42,17 @@ LocationManager.requestBackgroundLocation()
 
 ### Notifications Observers
 
-```swift
-NotificationCenter.default.addObserver(self, selector: #selector(yourSelector),
-                                               name: LocationManager.authorizationStatusChanged, object: nil)
+```swift 
 
 NotificationCenter.default.addObserver(self, selector: #selector(yourSelector),
-                                               name: LocationManager.locationManagerDidFail, object: nil)
+                                       name: LocationManager.authorizationStatusChanged, object: nil)
 
 NotificationCenter.default.addObserver(self, selector: #selector(yourSelector),
-                                               name: LocationManager.locationUpdated, object: nil)
+                                       name: LocationManager.locationManagerDidFail, object: nil)
 
 NotificationCenter.default.addObserver(self, selector: #selector(yourSelector),
-                                               name: LocationManager.authorizedBackgroundLocation, object: nil)
+                                       name: LocationManager.locationUpdated, object: nil)
+
+NotificationCenter.default.addObserver(self, selector: #selector(yourSelector),
+                                       name: LocationManager.authorizedBackgroundLocation, object: nil)
 ```
