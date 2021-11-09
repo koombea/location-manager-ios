@@ -27,6 +27,8 @@ public class LocationManager: NSObject {
     private static var currentLatitude: Double = 0
     private static var currentLongitude: Double = 0
     private static var authorizationCompletion: ((CLAuthorizationStatus) -> Void)?
+    
+    /// Default Location in case of denied or restricted permissions
     public static var defaultLocation = CLLocation(latitude: 40.657537, longitude: -96.661502)
     
     private static var isBackgroundLocationEnabled: Bool {
@@ -38,7 +40,7 @@ public class LocationManager: NSObject {
         }
     }
     
-    /// Current manager authorization status
+    /// Current authorization status - `CLAuthorizationStatus`
     public static var authorizationStatus: CLAuthorizationStatus = .notDetermined {
         didSet {
             guard authorizationStatus != .notDetermined else { return }
@@ -47,7 +49,7 @@ public class LocationManager: NSObject {
         }
     }
     
-    /// Current manager location
+    /// Current location - `CLLocation`
     public static var currentLocation: CLLocation? {
         return CLLocation(latitude: currentLatitude, longitude: currentLongitude)
     }
