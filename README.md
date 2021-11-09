@@ -26,4 +26,32 @@ dependencies: [
 
 ## The Basics
 
-### Setup
+### Get Location Auhtorization
+
+```swift
+LocationManager.promptForLocationAuthorization { status in
+
+}	
+```
+
+### Background Location
+
+```swift
+LocationManager.requestBackgroundLocation()	
+```
+
+### Notifications Observers
+
+```swift
+NotificationCenter.default.addObserver(self, selector: #selector(yourSelector),
+                                               name: LocationManager.authorizationStatus, object: nil)
+
+NotificationCenter.default.addObserver(self, selector: #selector(yourSelector),
+                                               name: LocationManager.locationManagerDidFail, object: nil)
+
+NotificationCenter.default.addObserver(self, selector: #selector(yourSelector),
+                                               name: LocationManager.locationUpdated, object: nil)
+
+NotificationCenter.default.addObserver(self, selector: #selector(yourSelector),
+                                               name: LocationManager.authorizedBackgroundLocation, object: nil)
+```
