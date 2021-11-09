@@ -65,9 +65,10 @@ public class LocationManager: NSObject {
         self.authorizationCompletion = completion
     }
 
-    /// Use this method to get background location authorization
+    /// Use this method to get background location authorization, it must be used before `promptForLocationAuthorization`
     public static func requestBackgroundLocation() {
         let status = CLLocationManager.authorizationStatus()
+        guard status != .notDetermined else { return }
         if status == .restricted || status == .denied || (status == .authorizedWhenInUse && isBackgroundLocationEnabled) {
             guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
             UIApplication.shared.open(url)
