@@ -36,7 +36,7 @@ LocationManager.promptForLocationAuthorization { status in
 
 ### Background Location Authorization
 
-it must be used before `promptForLocationAuthorization`
+It must be used after `promptForLocationAuthorization` [Read more from Apple Docs](https://developer.apple.com/documentation/corelocation/cllocationmanager/1620551-requestalwaysauthorization)
 
 ```swift
 LocationManager.requestBackgroundLocation()	
