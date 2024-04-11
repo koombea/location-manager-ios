@@ -23,7 +23,7 @@ import CoreLocation
 public class LocationManager: NSObject {
     
     public static var shared = LocationManager()
-    internal static var locationManager: CLLocationManager?
+    private static var locationManager: CLLocationManager?
     private static var currentLatitude: Double = 0
     private static var currentLongitude: Double = 0
     private static var authorizationCompletion: CheckedContinuation<CLAuthorizationStatus, Never>?
@@ -47,6 +47,7 @@ public class LocationManager: NSObject {
     
     /// Current location - `CLLocation`
     public static var currentLocation: CLLocation? {
+        guard currentLatitude != 0.0 && currentLongitude != 0.0 else { return nil }
         return CLLocation(latitude: currentLatitude, longitude: currentLongitude)
     }
     

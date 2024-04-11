@@ -53,4 +53,8 @@ final class LocationManagerTests: XCTestCase {
         LocationManager.shared.locationManager(CLLocationManager(), didChangeAuthorization: .denied)
         expect(LocationManager.authorizationStatus).to(equal(.denied))
     }
+    
+    func test_invalidCurrentLocation() {
+        expect(LocationManager.currentLocation).to(beNil())
+    }
 }
