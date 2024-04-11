@@ -23,13 +23,11 @@ import CoreLocation
 public class LocationManager: NSObject {
     
     public static var shared = LocationManager()
-    private static var locationManager: CLLocationManager?
+    internal static var locationManager: CLLocationManager?
     private static var currentLatitude: Double = 0
     private static var currentLongitude: Double = 0
-    private static var authorizationCompletion: ((CLAuthorizationStatus) -> Void)?
-    public var configuration = LocationManagerConfiguration()
-    
-    private static var isBackgroundLocationEnabled: Bool {
+    private static var authorizationCompletion: CheckedContinuation<CLAuthorizationStatus, Never>?
+    private static var isAuthorizedAlways: Bool {
         get {
             UserDefaults.standard.bool(forKey: "backgroundLocationEnabled")
         }
@@ -56,27 +54,41 @@ public class LocationManager: NSObject {
     
     /// Use this method to get location authorization
     /// - Parameters:
-    ///   - completion: Completion closure to return location manager Authorization Status.
-    public static func promptForLocationAuthorization(_ completion: @escaping ((CLAuthorizationStatus) -> Void)) {
-        guard locationManager == nil else { return completion(CLLocationManager.authorizationStatus()) }
-        let manager = CLLocationManager()
-        manager.delegate = shared
-        locationManager = manager
-        self.authorizationCompletion = completion
-    }
-
-    /// Use this method to get background location authorization, it must be used before `promptForLocationAuthorization`
-    public static func requestBackgroundLocation() {
-        let status = CLLocationManager.authorizationStatus()
-        guard status != .notDetermined else { return }
-        if status == .restricted || status == .denied || (
-            status == .authorizedWhenInUse && isBackgroundLocationEnabled
-        ) {
-            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-            UIApplication.shared.open(url)
-            return
+    ///   - type: Location authorization type (Once, whenInUse,  always)
+    @MainActor
+    public static func requestAuthorization(for type: LocationAuthorizationType) async -> CLAuthorizationStatus {
+        return await withCheckedContinuation { continuation in
+            if locationManager == nil {
+                let manager = CLLocationManager()
+                manager.delegate = shared
+                locationManager = manager
+            }
+            let authorizationStatus = LocationManager.authorizationStatus
+            switch type {
+            case .once, .whenInUse:
+                guard authorizationStatus == .notDetermined else {
+                    continuation.resume(returning: authorizationStatus)
+                    return
+                }
+                if type == .once {
+                    locationManager?.requestLocation()
+                } else {
+                    locationManager?.requestWhenInUseAuthorization()
+                }
+            case .always:
+                guard authorizationStatus == .notDetermined || authorizationStatus == .authorizedWhenInUse else {
+                    continuation.resume(returning: LocationManager.authorizationStatus)
+                    return
+                }
+                if authorizationStatus == .authorizedWhenInUse && isAuthorizedAlways {
+                    guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                    UIApplication.shared.open(url)
+                } else {
+                    locationManager?.requestAlwaysAuthorization()
+                }
+            }
+            self.authorizationCompletion = continuation
         }
-        locationManager?.requestAlwaysAuthorization()
     }
 
     private func updateCurrentLocation(_ location: CLLocation? = nil) {
@@ -85,12 +97,8 @@ public class LocationManager: NSObject {
             newLocation.coordinate.longitude != 0.0 {
             LocationManager.currentLatitude = newLocation.coordinate.latitude
             LocationManager.currentLongitude = newLocation.coordinate.longitude
-        } else if configuration.useDefaultLocation {
-            let defaultLocation = configuration.defaultLocation
-            LocationManager.currentLatitude = defaultLocation.coordinate.latitude
-            LocationManager.currentLongitude = defaultLocation.coordinate.longitude
         }
-        LocationManager.authorizationCompletion?(LocationManager.authorizationStatus)
+        LocationManager.authorizationCompletion?.resume(returning: LocationManager.authorizationStatus)
         LocationManager.authorizationCompletion = nil
     }
 }
@@ -101,36 +109,26 @@ extension LocationManager: CLLocationManagerDelegate {
         _ manager: CLLocationManager,
         didChangeAuthorization status: CLAuthorizationStatus
     ) {
-        print("Location Authorization Status: \(status.rawValue)")
         if LocationManager.authorizationStatus != status {
             LocationManager.authorizationStatus = status
         }
         switch status {
-        case .notDetermined:
-            print("Asking for location authorization")
-            if configuration.autoPromptLocationAuthorization ||
-                LocationManager.authorizationCompletion != nil {
-                manager.requestWhenInUseAuthorization()
-            }
-            return
         case .restricted, .denied:
-            print("Location services disabled")
             updateCurrentLocation()
         case .authorizedAlways, .authorizedWhenInUse:
-            if status == .authorizedAlways {
-                if !LocationManager.isBackgroundLocationEnabled {
-                    LocationManager.isBackgroundLocationEnabled = true
-                    NotificationCenter.default.post(name: LocationManager.authorizedBackgroundLocation,
-                                                    object: nil)
-                }
+            if status == .authorizedAlways && !LocationManager.isAuthorizedAlways {
+                LocationManager.isAuthorizedAlways = true
+                NotificationCenter.default.post(
+                    name: LocationManager.authorizedBackgroundLocation,
+                    object: nil
+                )
             }
-            print("Location services enabled")
             #if targetEnvironment(simulator) //DEVELOPMENT
             updateCurrentLocation()
             #else
             manager.startUpdatingLocation()
             #endif
-        @unknown default: break
+        default: break
         }
     }
     

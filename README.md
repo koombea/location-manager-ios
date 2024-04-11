@@ -17,11 +17,7 @@ The Swift Package Manager is a tool for managing the distribution of Swift code.
 The Package Manager is included in Swift 3.0 and above.
 
 ```swift
-dependencies: [
-        .package(name: "LocationManager",
-                 url: "https://github.com/koombea/location-manager-ios.git", 
-                 from: "1.0.0"),
-    ],
+.package(url: "https://github.com/koombea/location-manager-ios", from: "1.0.0")
 ```
 
 ## The Basics
@@ -29,17 +25,15 @@ dependencies: [
 ### Location Authorization
 
 ```swift
-LocationManager.promptForLocationAuthorization { status in
-	//Your code here
-}	
+let status = await LocationManager.requestAuthorization(for: .whenInUse)
 ```
 
 ### Background Location Authorization
 
-It must be used after `promptForLocationAuthorization` [Read more from Apple Docs](https://developer.apple.com/documentation/corelocation/cllocationmanager/1620551-requestalwaysauthorization)
+It must be used after request `whenInUse` [Read more from Apple Docs](https://developer.apple.com/documentation/corelocation/cllocationmanager/1620551-requestalwaysauthorization)
 
 ```swift
-LocationManager.requestBackgroundLocation()	
+let status = await LocationManager.requestAuthorization(for: .always)	
 ```
 
 ### Notifications Observers
