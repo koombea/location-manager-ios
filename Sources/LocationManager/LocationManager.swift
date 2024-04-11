@@ -27,9 +27,7 @@ public class LocationManager: NSObject {
     private static var currentLatitude: Double = 0
     private static var currentLongitude: Double = 0
     private static var authorizationCompletion: ((CLAuthorizationStatus) -> Void)?
-    
-    /// Default Location in case of denied or restricted permissions
-    public static var defaultLocation = CLLocation(latitude: 40.657537, longitude: -96.661502)
+    public var configuration = LocationManagerConfiguration()
     
     private static var isBackgroundLocationEnabled: Bool {
         get {
@@ -71,7 +69,9 @@ public class LocationManager: NSObject {
     public static func requestBackgroundLocation() {
         let status = CLLocationManager.authorizationStatus()
         guard status != .notDetermined else { return }
-        if status == .restricted || status == .denied || (status == .authorizedWhenInUse && isBackgroundLocationEnabled) {
+        if status == .restricted || status == .denied || (
+            status == .authorizedWhenInUse && isBackgroundLocationEnabled
+        ) {
             guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
             UIApplication.shared.open(url)
             return
@@ -80,17 +80,13 @@ public class LocationManager: NSObject {
     }
 
     private func updateCurrentLocation(_ location: CLLocation? = nil) {
-        var defaultLocation = LocationManager.defaultLocation
-        if LocationManager.currentLatitude != 0 && LocationManager.currentLongitude != 0 {
-            defaultLocation = CLLocation(latitude: LocationManager.currentLatitude,
-                                         longitude: LocationManager.currentLongitude)
-        }
         if let newLocation = location,
             newLocation.coordinate.latitude != 0.0 &&
             newLocation.coordinate.longitude != 0.0 {
             LocationManager.currentLatitude = newLocation.coordinate.latitude
             LocationManager.currentLongitude = newLocation.coordinate.longitude
-        } else {
+        } else if configuration.useDefaultLocation {
+            let defaultLocation = configuration.defaultLocation
             LocationManager.currentLatitude = defaultLocation.coordinate.latitude
             LocationManager.currentLongitude = defaultLocation.coordinate.longitude
         }
@@ -101,7 +97,10 @@ public class LocationManager: NSObject {
 
 extension LocationManager: CLLocationManagerDelegate {
 
-    public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+    public func locationManager(
+        _ manager: CLLocationManager,
+        didChangeAuthorization status: CLAuthorizationStatus
+    ) {
         print("Location Authorization Status: \(status.rawValue)")
         if LocationManager.authorizationStatus != status {
             LocationManager.authorizationStatus = status
@@ -109,7 +108,10 @@ extension LocationManager: CLLocationManagerDelegate {
         switch status {
         case .notDetermined:
             print("Asking for location authorization")
-            manager.requestWhenInUseAuthorization()
+            if configuration.autoPromptLocationAuthorization ||
+                LocationManager.authorizationCompletion != nil {
+                manager.requestWhenInUseAuthorization()
+            }
             return
         case .restricted, .denied:
             print("Location services disabled")
